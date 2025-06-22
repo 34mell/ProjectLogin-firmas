@@ -1,0 +1,59 @@
+// Document types and interfaces for the signature system
+
+export const DocumentStatus = {
+  UPLOADING: 'uploading',
+  READY: 'ready',
+  SIGNED: 'signed',
+  PENDING: 'pending',
+  ERROR: 'error'
+};
+
+export const createDocument = (file) => ({
+  id: Math.random().toString(36).substr(2, 9),
+  name: file.name,
+  size: file.size,
+  type: file.type,
+  uploadDate: new Date(),
+  status: DocumentStatus.UPLOADING,
+  url: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+  signedBy: null,
+  signedDate: null
+});
+
+export const validateFile = (file) => {
+  const allowedTypes = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+
+  if (!allowedTypes.includes(file.type)) {
+    return `Tipo de archivo no permitido: ${file.name}`;
+  }
+  if (file.size > maxSize) {
+    return `Archivo demasiado grande: ${file.name} (máximo 10MB)`;
+  }
+  return null;
+};
+
+export const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+export const formatDate = (date) => {
+  return new Intl.DateTimeFormat('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+};
