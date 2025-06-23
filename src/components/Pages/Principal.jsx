@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Header from '../ui/Header';
 import DocumentUpload from '../ui/DocumentUpload';
 import DocumentList from '../ui/DocumentList';
@@ -8,12 +8,21 @@ import Notification from '../ui/Notification';
 import { createDocument, DocumentStatus } from '../ui/types';
 import { uploadpdf } from '../services/UploadService';
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 function Principal() {
   const [documents, setDocuments] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
   const [previewDocument, setPreviewDocument] = useState(null);
   const [notification, setNotification] = useState(null);
+  const { currentUser } = useAuth();
+
+  useEffect(() => {
+    // Bienvenida al usuario
+    if (currentUser) {
+      showNotification('success', `Bienvenido, ${currentUser.firstName} ${currentUser.lastName}`);
+    }
+  }, []);
 
   const showNotification = (type, message) => {
     setNotification({ type, message });

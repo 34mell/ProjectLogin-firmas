@@ -1,25 +1,34 @@
 import React from 'react';
 import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
-import { BrowserRouter, Routes, Route } from "react-router";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Principal from './components/Pages/Principal';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 function App() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
-
-          <BrowserRouter>
-            <Routes>
-              <Route path="/Register" element={<RegisterPage />} />
-              <Route path="/Login" element={<LoginPage />} />
-              <Route path="/Principal" element={<Principal />} />
-            </Routes>
-          </BrowserRouter>
-
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center p-4">
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route 
+              path="/principal" 
+              element={
+                <ProtectedRoute>
+                  <Principal />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/" element={<LoginPage />} />
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   );
-
-
 }
 
 export default App;

@@ -1,26 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LoginForm } from './LoginForm';
 import { Sparkles } from 'lucide-react';
 import { loginUser } from '../services/authService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 export const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
-  let navigate = useNavigate();
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login, authenticated } = useAuth();
+  
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (authenticated) {
+      navigate('/principal');
+    }
+  }, [authenticated, navigate]);
+  
   // Maneja el inicio de sesión 
   const handleLogin = async (credentials) => {
-        try {
+    setIsLoading(true);
+    setError('');
+    
+    try {
       const result = await loginUser(credentials);
       console.log('acceso exitoso', result);
-
-      // Redirigir al login o dashboard
-      navigate('/Principal');
+      
+      // Actualizar el contexto de autenticación
+      login(result);
+      
+      // Redirigir al dashboard
+      navigate('/principal');
     } catch (error) {
-      alert(error.message); // Reemplaza esto con un toast si usas uno
+      setError(error.message || 'Error al iniciar sesión');
+      alert(error.message);
     } finally {
       setIsLoading(false);
     }
   };
-  
   
   return (
     <div className="max-w-md w-full mx-auto animate-fadeIn">
