@@ -33,7 +33,7 @@ const DocumentList = ({ documents, onPreview, onDelete, onSign }) => {
       case DocumentStatus.ERROR:
         return 'Error';
       default:
-        return 'Desconocido';
+        return 'Sin estado';
     }
   };
 

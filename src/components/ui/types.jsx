@@ -20,23 +20,44 @@ export const createDocument = (file) => ({
   signedDate: null
 });
 
-export const validateFile = (file) => {
-  const allowedTypes = [
-    'application/pdf',
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-  ];
-  const maxSize = 10 * 1024 * 1024; // 10MB
+export const validateFile = (file, fileType = 'document') => {
+  // Si estamos validando un documento
+  if (fileType === 'document') {
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    const maxSize = 10 * 1024 * 1024; // 10MB
 
-  if (!allowedTypes.includes(file.type)) {
-    return `Tipo de archivo no permitido: ${file.name}`;
+    if (!allowedTypes.includes(file.type)) {
+      return `Tipo de archivo no permitido: ${file.name}`;
+    }
+    if (file.size > maxSize) {
+      return `Archivo demasiado grande: ${file.name} (máximo 10MB)`;
+    }
+  } 
+  // Si estamos validando un certificado
+  else if (fileType === 'certificate') {
+    const maxSize = 5 * 1024 * 1024;
+    
+    const isP12Extension = file.name.toLowerCase().endsWith('.p12');
+    const isP12MimeType = file.type === 'application/x-pkcs12' || 
+                         file.type === 'application/pkcs12' ||
+                         file.type === '';
+
+    if (!isP12Extension && !isP12MimeType) {
+      return `Formato de certificado no válido: ${file.name} (debe ser .p12)`;
+    }
+    
+    if (file.size > maxSize) {
+      return `Certificado demasiado grande: ${file.name} (máximo 5MB)`;
+    }
   }
-  if (file.size > maxSize) {
-    return `Archivo demasiado grande: ${file.name} (máximo 10MB)`;
-  }
+  
   return null;
 };
 

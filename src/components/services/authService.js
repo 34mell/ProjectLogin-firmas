@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Token almacenado en memoria (en lugar de localStorage)
@@ -40,6 +39,32 @@ api.interceptors.response.use(
   }
 );
 
+// Función para crear una cookie HttpOnly (más segura)
+function setSessionCookie(name, value, expiryDays = 1) {
+  const date = new Date();
+  date.setTime(date.getTime() + (expiryDays * 24 * 60 * 60 * 1000));
+  const expires = "expires=" + date.toUTCString();
+  document.cookie = `${name}=1; ${expires}; path=/; SameSite=Strict`;
+}
+
+// Función para verificar si existe una cookie
+function checkSessionCookie(name) {
+  const cookies = document.cookie.split(';');
+  for (let i = 0; i < cookies.length; i++) {
+    const cookie = cookies[i].trim();
+    if (cookie.indexOf(name + '=') === 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Función para eliminar una cookie
+function deleteSessionCookie(name) {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Strict`;
+}
+
+// Modificar la función loginUser
 export async function loginUser({ email, password }) {
   try {
     const response = await api.post('/login', {
@@ -50,6 +75,9 @@ export async function loginUser({ email, password }) {
     // Guardar token y datos del usuario en memoria
     inMemoryToken = response.data.token;
     inMemoryUser = response.data.user;
+    
+    // Crear una cookie de sesión (sin guardar el token en ella)
+    setSessionCookie('sessionActive', 1);
     
     return response.data;
   } catch (error) {
@@ -98,4 +126,38 @@ export function getToken() {
 export function logout() {
   inMemoryToken = null;
   inMemoryUser = null;
+  deleteSessionCookie('sessionActive');
+}
+
+// Función para recuperar la sesión
+export async function recoverSession() {
+  if (checkSessionCookie('sessionActive')) {
+    try {
+      // endpoint para recuperar la sesión
+      const response = await fetch('http://localhost:3000/api/auth/session', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${inMemoryToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        logout();
+        return false;
+      }
+
+      const data = await response.json();
+      inMemoryToken = data.token;
+      inMemoryUser = data.user;
+      
+      return true;
+    } catch (error) {
+      console.error('Error al recuperar sesión:', error);
+      logout();
+      return false;
+    }
+  }
+  
+  return false;
 }

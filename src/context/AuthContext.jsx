@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { isAuthenticated, getCurrentUser, logout } from '../components/services/authService';
+import { isAuthenticated, getCurrentUser, logout, recoverSession } from '../components/services/authService';
 
 // Crear el contexto
 const AuthContext = createContext();
@@ -8,10 +8,16 @@ export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
+  
   useEffect(() => {
     // Verificar autenticación al cargar
-    const checkAuth = () => {
-      const isAuth = isAuthenticated();
+    const checkAuth = async () => {
+      let isAuth = isAuthenticated();
+      if (!isAuth) {
+        const recovered = await recoverSession();
+        isAuth = recovered;
+      }
+      
       setAuthenticated(isAuth);
 
       if (isAuth) {
@@ -33,7 +39,7 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('auth-error', handleAuthError);
     
     checkAuth();
-    
+
     // Limpieza al desmontar
     return () => {
       window.removeEventListener('auth-error', handleAuthError);

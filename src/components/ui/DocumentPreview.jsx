@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Download, FileText, Image, PenTool } from 'lucide-react';
 import { formatFileSize, formatDate, DocumentStatus } from './types';
 
-const DocumentPreview = ({ document, onClose, onSign }) => {
+const DocumentPreview = ({ document, certificates = [], onClose, onSign }) => {
+  const [selectedCertificateId, setSelectedCertificateId] = useState('');
+  const [certificatePassword, setCertificatePassword] = useState('');
+
   if (!document) return null;
 
   const isPDF = document.type === 'application/pdf';
@@ -30,16 +33,54 @@ const DocumentPreview = ({ document, onClose, onSign }) => {
           
           <div className="flex items-center space-x-3">
             {document.status === DocumentStatus.READY && (
-              <button
-                onClick={() => {
-                  onSign(document.id);
-                  onClose();
-                }}
-                className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <PenTool className="w-4 h-4" />
-                <span className="font-medium">Firmar</span>
-              </button>
+              <>
+                {certificates.length > 0 ? (
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-center space-x-3">
+                      <select
+                        value={selectedCertificateId}
+                        onChange={(e) => setSelectedCertificateId(e.target.value)}
+                        className="rounded-lg border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Selecciona un certificado</option>
+                        {certificates.map(cert => (
+                          <option key={cert.id} value={cert.id}>
+                            {cert.nombre || 'Certificado'} - {cert.emisor || 'Emisor no especificado'}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      <input
+                        type="password"
+                        value={certificatePassword}
+                        onChange={(e) => setCertificatePassword(e.target.value)}
+                        placeholder="Contraseña del certificado"
+                        className="rounded-lg border border-gray-300 py-2 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        onSign(document.id, selectedCertificateId, certificatePassword);
+                        onClose();
+                      }}
+                      disabled={!selectedCertificateId}
+                      className={`flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all duration-200 shadow-sm hover:shadow-md ${
+                        !selectedCertificateId ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      <PenTool className="w-4 h-4" />
+                      <span className="font-medium">Firmar</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm text-red-500">
+                      Para firmar documentos, primero debes subir un certificado digital.
+                    </span>
+                  </div>
+                )}
+              </>
             )}
             
             <button

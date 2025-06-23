@@ -9,6 +9,9 @@ import { DocumentStatus } from '../ui/types';
 import { uploadpdf, getUserDocuments } from '../services/UploadService';
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import CertificateUpload from '../ui/CertificateUpload';
+import CertificateList from '../ui/CertificateList';
+import { uploadCertificate, getUserCertificates } from '../services/certificateService';
 
 function Principal() {
   const [documents, setDocuments] = useState([]);
@@ -16,6 +19,8 @@ function Principal() {
   const [previewDocument, setPreviewDocument] = useState(null);
   const [notification, setNotification] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [certificates, setCertificates] = useState([]);
+  const [showCertificateSection, setShowCertificateSection] = useState(false);
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -24,6 +29,12 @@ function Principal() {
         setIsLoading(true);
         const userDocuments = await getUserDocuments();
         
+        if (!userDocuments || userDocuments.length === 0) {
+          console.log("No se encontraron documentos o la respuesta está vacía");
+          setDocuments([]);
+          return;
+        }
+        
         // Mapear los documentos del backend al formato que espera la UI
         const formattedDocuments = userDocuments.map(doc => {
           // Intentar crear objetos Date válidos, con fallback a null si la fecha es inválida
@@ -31,8 +42,8 @@ function Principal() {
           let signedDate = null;
           
           try {
-            if (doc.fechaSubida || doc.uploadDate) {
-              uploadDate = new Date(doc.fechaSubida || doc.uploadDate);
+            if (doc.fechaSubida || doc.uploadDate || doc.fecha_subida) {
+              uploadDate = new Date(doc.fechaSubida || doc.uploadDate || doc.fecha_subida);
               // Verificar si la fecha es válida
               if (isNaN(uploadDate.getTime())) uploadDate = null;
             }
@@ -48,12 +59,12 @@ function Principal() {
           
           return {
             id: doc._id || doc.id,
-            name: doc.nombre || doc.name,
-            size: doc.tamaño || doc.size || 0,
-            type: doc.tipo || doc.type || 'application/pdf',
+            name: doc.nombre_original || doc.nombre || doc.name,
+            size: doc.tamano || doc.tamaño || doc.size || 0,
+            type: doc.tipo_archivo || doc.tipo || doc.type || 'application/pdf',
             uploadDate: uploadDate,
             status: doc.estado || doc.status || DocumentStatus.READY,
-            url: doc.url,
+            url: doc.url || doc.ruta,
             signedBy: doc.firmadoPor || doc.signedBy,
             signedDate: signedDate
           };
@@ -173,18 +184,83 @@ function Principal() {
     showNotification('success', 'Documento eliminado correctamente');
   };
 
-  const handleSign = (id) => {
-    setDocuments(prev => prev.map(doc => 
-      doc.id === id 
-        ? { 
-            ...doc, 
-            status: DocumentStatus.SIGNED, 
-            signedBy: currentUser ? `${currentUser.firstName || currentUser.nombre} ${currentUser.lastName || currentUser.apellido}` : 'Usuario',
-            signedDate: new Date()
-          }
-        : doc
-    ));
-    showNotification('success', 'Documento firmado correctamente');
+  const handleSign = async (id, certificateId, password) => {
+    try {
+      if (!certificateId) {
+        showNotification('error', 'Debes seleccionar un certificado para firmar');
+        return;
+      }
+      
+      if (!password && password !== '') {
+        showNotification('error', 'La contraseña del certificado es requerida');
+        return;
+      }
+      
+      showNotification('info', 'Firmando documento...');
+      
+      const result = await signDocument(id, certificateId, password);
+      
+      setDocuments(prev => prev.map(doc => 
+        doc.id === id 
+          ? { 
+              ...doc, 
+              status: DocumentStatus.SIGNED, 
+              signedBy: currentUser ? `${currentUser.firstName || currentUser.nombre} ${currentUser.lastName || currentUser.apellido}` : 'Usuario',
+              signedDate: new Date()
+            }
+          : doc
+      ));
+      
+      showNotification('success', 'Documento firmado correctamente');
+    } catch (error) {
+      console.error('Error al firmar documento:', error);
+      showNotification('error', `No se pudo firmar el documento: ${error.message}`);
+    }
+  };
+
+  // useEffect para cargar certificados del usuario
+  useEffect(() => {
+    const fetchCertificates = async () => {
+      try {
+        const userCertificates = await getUserCertificates();
+        setCertificates(userCertificates);
+      } catch (error) {
+        console.error('Error al cargar certificados:', error);
+        showNotification('error', 'No se pudieron cargar tus certificados');
+      }
+    };
+
+    fetchCertificates();
+  }, []);
+
+  // Añadir función para manejar la subida de certificados
+  const handleCertificateUpload = async (file, password) => {
+    try {
+      showNotification('info', 'Subiendo certificado...');
+      const result = await uploadCertificate(file, password);
+      
+      // Actualizar la lista de certificados
+      setCertificates(prev => [...prev, result.certificado]);
+      
+      showNotification('success', 'Certificado subido correctamente');
+      return result;
+    } catch (error) {
+      console.error('Error al subir certificado:', error);
+      showNotification('error', `Error al subir certificado: ${error.message}`);
+      throw error;
+    }
+  };
+
+  // Añadir función para eliminar certificados
+  const handleDeleteCertificate = async (id) => {
+    try {
+      // TODO: Implementar la lógica de eliminación en el backend
+      setCertificates(prev => prev.filter(cert => cert.id !== id));
+      showNotification('success', 'Certificado eliminado correctamente');
+    } catch (error) {
+      console.error('Error al eliminar certificado:', error);
+      showNotification('error', 'No se pudo eliminar el certificado');
+    }
   };
 
   return (
@@ -227,11 +303,41 @@ function Principal() {
             )}
           </section>
         </div>
+
+        {/* Certificados Section */}
+        <div className="space-y-8 mt-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-gray-800">Certificados Digitales</h2>
+            <button
+              onClick={() => setShowCertificateSection(!showCertificateSection)}
+              className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+            >
+              {showCertificateSection ? 'Ocultar' : 'Gestionar Certificados'}
+            </button>
+          </div>
+
+          {showCertificateSection && (
+            <section className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div>
+                  <CertificateUpload onCertificateUpload={handleCertificateUpload} />
+                </div>
+                <div>
+                  <CertificateList 
+                    certificates={certificates} 
+                    onDelete={handleDeleteCertificate} 
+                  />
+                </div>
+              </div>
+            </section>
+          )}
+        </div>
       </main>
 
       {/* Preview Modal */}
       <DocumentPreview
         document={previewDocument}
+        certificates={certificates}
         onClose={() => setPreviewDocument(null)}
         onSign={handleSign}
       />
