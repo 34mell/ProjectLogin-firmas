@@ -97,7 +97,7 @@ const DocumentList = ({ documents, onPreview, onDelete, onSign }) => {
                   <div className="flex items-center space-x-4 text-sm text-gray-500 mb-3">
                     <span className="font-medium">{formatFileSize(document.size)}</span>
                     <span>•</span>
-                    <span>Subido el {formatDate(document.uploadDate)}</span>
+                    <span>Subido el {document.uploadDate ? formatDate(document.uploadDate) : 'fecha desconocida'}</span>
                   </div>
                   
                   <div className="flex items-center space-x-4">
@@ -109,7 +109,8 @@ const DocumentList = ({ documents, onPreview, onDelete, onSign }) => {
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
                         <User className="w-4 h-4" />
                         <span>
-                          Firmado por <span className="font-medium">{document.signedBy}</span> el {formatDate(document.signedDate)}
+                          Firmado por <span className="font-medium">{document.signedBy}</span>
+                          {document.signedDate ? ` el ${formatDate(document.signedDate)}` : ''}
                         </span>
                       </div>
                     )}
