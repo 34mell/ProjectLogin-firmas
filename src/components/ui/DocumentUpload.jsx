@@ -85,7 +85,7 @@ const DocumentUpload = ({ onFileUpload, uploadProgress }) => {
         <input
           type="file"
           multiple
-          accept=".pdf,.jpg,.jpeg,.png,.gif,.doc,.docx"
+          accept=".pdf,application/pdf"
           onChange={handleFileInput}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           id="file-upload"
@@ -109,7 +109,7 @@ const DocumentUpload = ({ onFileUpload, uploadProgress }) => {
               {dragActive ? 'Suelta los archivos aquí' : 'Subir Documentos para Firma'}
             </h3>
             <p className="text-gray-600 mb-4 text-lg">
-              Arrastra y suelta tus archivos aquí o{' '}
+              Arrastra y suelta tus archivos PDF aquí o{' '}
               <label htmlFor="file-upload" className="text-blue-600 hover:text-blue-700 cursor-pointer font-semibold underline decoration-2 underline-offset-2">
                 selecciona archivos
               </label>

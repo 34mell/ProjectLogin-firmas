@@ -21,20 +21,14 @@ export const createDocument = (file) => ({
 });
 
 export const validateFile = (file, fileType = 'document') => {
-  // Si estamos validando un documento
   if (fileType === 'document') {
     const allowedTypes = [
-      'application/pdf',
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/pdf'
     ];
     const maxSize = 10 * 1024 * 1024; // 10MB
 
     if (!allowedTypes.includes(file.type)) {
-      return `Tipo de archivo no permitido: ${file.name}`;
+      return `Solo se permiten archivos PDF: ${file.name}`;
     }
     if (file.size > maxSize) {
       return `Archivo demasiado grande: ${file.name} (máximo 10MB)`;

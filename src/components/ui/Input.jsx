@@ -49,48 +49,41 @@ export const Input = ({
       <div className="relative">
         <label
           htmlFor={id}
-          className={`absolute left-3 transition-all duration-200 pointer-events-none ${
-            showLabel
-              ? '-top-2.5 text-xs bg-white px-1 text-blue-600'
-              : `top-1/2 -translate-y-1/2 text-gray-500 ${sizeStyles[size].split(' ')[1]}`
-          }`}
+          className="block mb-1 text-sm font-medium text-gray-700"
         >
           {label}{required && <span className="text-red-500 ml-1">*</span>}
         </label>
+        <input
+          id={id}
+          type={inputType}
+          className={`block w-full rounded-md border ${
+            error ? 'border-red-500' : 'border-gray-300'
+          } px-3 ${sizeStyles[size]} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+            icon ? 'pl-11' : ''
+          } ${type === 'password' ? 'pr-10' : ''} ${className}`}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onChange={handleChange}
+          value={value}
+          {...props}
+        />
         
-        <div className="relative">
-          <input
-            id={id}
-            type={inputType}
-            className={`block w-full rounded-md border ${
-              error ? 'border-red-500' : 'border-gray-300'
-            } px-3 ${sizeStyles[size]} focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-              icon ? 'pl-10' : ''
-            } ${type === 'password' ? 'pr-10' : ''} ${className}`}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onChange={handleChange}
-            value={value}
-            {...props}
-          />
-          
-          {icon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              {icon}
-            </div>
-          )}
-          
-          {type === 'password' && (
-            <button
-              type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
-              onClick={togglePasswordVisibility}
-              tabIndex={-1}
-            >
-              {inputType === 'password' ? <Eye size={18} /> : <EyeOff size={18} />}
-            </button>
-          )}
-        </div>
+        {icon && (
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
+            {React.cloneElement(icon, { size: 20 })}
+          </div>
+        )}
+        
+        {type === 'password' && (
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+            onClick={togglePasswordVisibility}
+            tabIndex={-1}
+          >
+            {inputType === 'password' ? <Eye size={18} /> : <EyeOff size={18} />}
+          </button>
+        )}
       </div>
       
       {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
